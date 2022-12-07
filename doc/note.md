@@ -68,3 +68,77 @@
 -   缺点是给数据传输和服务器增加压力，也无法灵活定制数据结构
 
 ## 4. 编写监控采集脚本
+
+### 1. 开通日志服务
+
+[日志服务(Log Service,简称 SLS)](https://account.aliyun.com/login/login.htm?oauth_callback=https%3A%2F%2Fsls.console.aliyun.com%2Flognext%2Fprofile)是针对日志类数据一站式服务，用户无需开发就能快捷完成数据采集、消费、投递以及查询分析等功能，帮助提升运维、运营效率，建立 DT 时代海量日志处理能力
+[日志服务帮助文档](https://help.aliyun.com/product/28958.html)
+[Web Tracking](https://help.aliyun.com/document_detail/31752.html)
+
+### 2. 监控错误
+
+#### 1. 错误分类
+
+-   JS 错误
+    -   JS 错误
+    -   Promise 异常
+-   资源异常
+    -   监听 error
+
+#### 2. 数据结构设计
+
+1. jsError
+
+```js
+{
+  "title": "前端监控系统",//页面标题
+  "url": "http://localhost:8080/",//页面URL
+  "timestamp": "1590815288710",//访问时间戳
+  "userAgent": "Chrome",//用户浏览器类型
+  "kind": "stability",//大类
+  "type": "error",//小类
+  "errorType": "jsError",//错误类型
+  "message": "Uncaught TypeError: Cannot set property 'error' of undefined",//类型详情
+  "filename": "http://localhost:8080/",//访问的文件名
+  "position": "0:0",//行列信息
+  "stack": "btnClick (http://localhost:8080/:20:39)^HTMLInputElement.onclick (http://localhost:8080/:14:72)",//堆栈信息
+  "selector": "HTML BODY #container .content INPUT"//选择器
+}
+```
+
+2. promiseError
+
+```js
+{
+  "title": "前端监控系统",//页面标题
+  "url": "http://localhost:8080/",//页面URL
+  "timestamp": "1590815290600",//访问时间戳
+  "userAgent": "Chrome",//用户浏览器类型
+  "kind": "stability",//大类
+  "type": "error",//小类
+  "errorType": "promiseError",//错误类型
+  "message": "someVar is not defined",//类型详情
+  "filename": "http://localhost:8080/",//访问的文件名
+  "position": "24:29",//行列信息
+  "stack": "http://localhost:8080/:24:29^new Promise (<anonymous>)^btnPromiseClick (http://localhost:8080/:23:13)^HTMLInputElement.onclick (http://localhost:8080/:15:86)",//堆栈信息
+  "selector": "HTML BODY #container .content INPUT"//选择器
+}
+```
+
+3. resourceError
+
+```js
+{
+  "title": "前端监控系统",//页面标题
+  "url": "http://localhost:8080/",//页面URL
+  "timestamp": "1590816168643",//访问时间戳
+  "userAgent": "Chrome",//用户浏览器类型
+  "kind": "stability",//大类
+  "type": "error",//小类
+  "errorType": "resourceError",//错误类型
+  "filename": "http://localhost:8080/error.js",//访问的文件名
+  "tagName": "SCRIPT",//标签名
+  "timeStamp": "76",//时间
+  "selector": "HTML BODY SCRIPT"//选择器
+}
+```

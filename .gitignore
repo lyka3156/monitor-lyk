@@ -3,5 +3,7 @@ dist
 *.log
 .dea
 .DS_Store
+dll
+config/cloudStorage.json
 .vscode
 .history

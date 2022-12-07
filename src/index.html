@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端监控</title>
+</head>
+<body>
+    前端监控
+
+    <button onclick="handleError()">触发error错误</button>
+    <button onclick="handlePromiseError()">触发promiseError错误</button>
+
+    <script type="text/javascript">
+        function handleError() {
+            console.log(window.someObj.name);
+        }
+
+        function handlePromiseError() {
+            new Promise(function (resolve, reject) {
+                console.log(someVar.some);
+            })
+        }
+    </script>
+</body>
+</html>
