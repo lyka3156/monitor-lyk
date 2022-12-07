@@ -1,0 +1,7 @@
+node_modules
+dist
+*.log
+.dea
+.DS_Store
+.vscode
+.history
