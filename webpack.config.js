@@ -18,6 +18,7 @@ module.exports = {
 		static: {
 			directory: resolvePath('dist'),
 		},
+		open: true
 	},
 	// 配置插件
 	plugins: [
@@ -26,6 +27,8 @@ module.exports = {
 			filename: 'index.html', // 打包之后的文件名称
 			// 在head头部插入打包之后的资源
 			inject: 'head',
+			// HtmlWebpackPlugin版本5，  默认defer: 加了该属性的script，脚本会在文档渲染完毕后，DOMContentLoaded事件调用前执行
+			scriptLoading: "blocking", 	// 加载的脚本默认是defer，  设置blocking同步加载js，不然捕获不到资源错误   ******	
 		}),
 	],
 };

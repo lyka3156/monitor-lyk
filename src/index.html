@@ -1,27 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>前端监控</title>
+    <title>前端监控系统</title>
 </head>
-<body>
-    前端监控
 
-    <button onclick="handleError()">触发error错误</button>
-    <button onclick="handlePromiseError()">触发promiseError错误</button>
+<body>
+    <div id="root">
+        <button id="btn1" onclick="handleError()">触发error错误</button>
+        <button id="btn2" onclick="handlePromiseError()">触发promiseError错误</button>
+    </div>
+
 
     <script type="text/javascript">
+        // 1. js错误
         function handleError() {
             console.log(window.someObj.name);
         }
-
+        // 2. promise 错误
         function handlePromiseError() {
-            new Promise(function (resolve, reject) {
-                console.log(someVar.some);
+            let p1 = new Promise(function (resolve, reject) {
+                console.log(window.someVar.some); // 报错信息reason是object
+                // reject("错误"); // 报错信息reason是string    
+                // reject(window.someVar.some) // 报错信息reason是object
             })
         }
     </script>
+
+    <!-- 3. 资源加载错误 -->
+    <script src="error.js"></script>
 </body>
+
 </html>
