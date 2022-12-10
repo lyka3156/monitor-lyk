@@ -80,7 +80,7 @@
 [查询与分析日志的常见报错](https://help.aliyun.com/document_detail/61628.html?spm=5176.2020520112.0.0.d33934c08Ya9Mh)
 [日志域名查询](https://help.aliyun.com/document_detail/29008.html?spm=a2c4g.11186623.0.0.6f963341feXc3W)
 
-### 2. 监控错误
+### 2. 监控错误(JS/资源)
 
 #### 1. 错误分类
 
@@ -634,3 +634,313 @@ export default function getSelector(pathsOrTarget) {
 	}
 }
 ```
+
+
+### 3. 接口异常采集脚本
+
+#### 1. 数据设计
+`成功接口返回200`	
+``` js 
+{
+  "title": "前端监控系统", //标题
+  "url": "http://localhost:8080/", //url
+  "timestamp": "1670669964173", //timestamp
+  "userAgent": "Chrome", //浏览器版本
+  "kind": "stability", //大类
+  "type": "xhr", //小类
+  "eventType": "load", //事件类型
+  "pathname": "/success", //路径
+  "status": "200-OK", //状态码
+  "duration": "4", //持续时间
+  "response": "{\"id\":1}", //响应内容
+  "params": ""  //参数
+}
+```
+
+`成功接口返回500`
+``` js 
+{
+  "title": "前端监控系统", //标题
+  "url": "http://localhost:8080/", //url
+  "timestamp": "1670669975588", //timestamp
+  "userAgent": "Chrome", //浏览器版本
+  "kind": "stability", //大类
+  "type": "xhr", //小类
+  "eventType": "load", //事件类型
+  "pathname": "/error", //路径
+  "status": "500-Internal Server Error", //状态码
+  "duration": "4", //持续时间
+  "response": "", //响应内容
+  "params": "name=lyk"  //参数
+}
+```
+
+`失败接口`
+``` js 
+{
+  "title": "前端监控系统",
+  "url": "http://localhost:8080/",
+  "timestamp": "1670669989117",
+  "userAgent": "Chrome",
+  "kind": "stability",
+  "type": "xhr",
+  "eventType": "error",
+  "pathname": "https://somewhere.org/i-dont-exist",
+  "status": "0-",
+  "duration": "835",
+  "response": "",
+  "params": ""
+}
+```
+
+`请求中断`
+``` js 
+{
+  "title": "前端监控系统",
+  "url": "http://localhost:8080/",
+  "timestamp": "1670669994145",
+  "userAgent": "Chrome",
+  "kind": "stability",
+  "type": "xhr",
+  "eventType": "abort",
+  "pathname": "/success",
+  "status": "0-",
+  "duration": "1",
+  "response": "",
+  "params": ""
+}
+```
+
+#### 2. 代码实现
+
+##### 1. 配置 webpack.config.js 
+
+- 配置devServer的setupMiddlewares中间件，模拟后端get/post接口，来做接口请求拦截案例
+
+``` js
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const resolvePath = (p) => path.resolve(__dirname, p);
+
+// npm i webpack webpack-cli html-webpack-plugin webpack-dev-server user-agent -D
+// 导出webpack配置信息
+module.exports = {
+	mode: 'development', // 开发模式
+	context: process.cwd(), // 工作目录
+	entry: './src/index.js', // 入口文件
+	output: {
+		path: resolvePath('dist'), // 输出目录
+		filename: 'monitor.js', // 输出文件名
+	},
+	// 开发服务器
+	devServer: {
+		// 运行代码的目录   老版写法: 		contentBase: resolvePath('dist'),
+		static: {
+			directory: resolvePath('dist'),
+		},
+		open: true,	// 自动打开浏览器
+		// // 注册before钩子	
+		// webpack5 写法	
+		setupMiddlewares: (middlewares, devServer) => {
+			if (!devServer) throw new Error('webpack-dev-server is not defined');
+			// express 写法			
+			// 注册/success路由			访问	/success
+			devServer.app.get('/success', function (req, res) {
+				res.json({ id: 1 });		// 响应成功
+			});
+			// 注册/error路由			访问	/error
+			devServer.app.post('/error', function (req, res) {
+				res.sendStatus(500);		// 响应失败
+			});
+			return middlewares
+		},
+
+	},
+	// 配置插件
+	plugins: [
+		new HtmlWebpackPlugin({
+			template: './src/index.html', // 模板html文件
+			filename: 'index.html', // 打包之后的文件名称
+			// 在head头部插入打包之后的资源
+			inject: 'head',
+			// HtmlWebpackPlugin版本5，  添加了 scriptLoading 属性配置
+			// https://www.npmjs.com/package/html-webpack-plugin	scriptLoading
+			// {'blocking'|'defer'|'module'} 支持3个配置，默认defer,异步加载（脚本会在文档渲染完毕后，DOMContentLoaded事件调用前执行）
+			scriptLoading: "blocking", 	// 设置blocking同步加载js，不然捕获不到资源错误   ******	
+		}),
+	],
+};
+
+```
+
+##### 2. 入口 index.html
+
+`src\index.html`
+``` html 
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端监控系统</title>
+</head>
+
+<body>
+    <div id="root">
+        <!-- 1. 监控js错误 -->
+        <p>1. 监控js错误</p>
+        <button id="btn1" onclick="handleError()">触发error错误</button>
+        <button id="btn2" onclick="handlePromiseError()">触发promiseError错误</button>
+        <br />
+
+        <!-- 2. 监控接口错误 -->
+        <p>2. 监控接口错误</p>
+        <button id="btn3" onclick="sendAjaxSuccess()">发起ajax成功请求</button>
+        <button id="btn3-1" onclick="sendAjax500Success()">ajax发送请求响应500</button>
+        <button id="btn4" onclick="sendAjaxError()">发起ajax失败请求</button>
+        <button id="btn5" onclick="sendAjaxAbort()">发起ajax请求中断</button>
+
+    </div>
+
+    <!-- 1. 监控js错误 -->
+    <script type="text/javascript">
+        // 1.1 js错误
+        function handleError() {
+            console.log(window.someObj.name);
+        }
+        // 1.2 promise 错误
+        function handlePromiseError() {
+            let p1 = new Promise(function (resolve, reject) {
+                console.log(window.someVar.some); // 报错信息reason是object
+                // reject("错误"); // 报错信息reason是string    
+                // reject(window.someVar.some) // 报错信息reason是object
+            })
+        }
+    </script>
+    <!-- 1.3 资源加载错误 -->
+    <!-- <script src="error.js" /> -->
+
+    <!-- 2. 监控接口错误 -->
+    <script>
+        // ajax发送请求成功
+        function sendAjaxSuccess() {
+            let xhr = new XMLHttpRequest;    // 初始化XMLHttpRequest实例
+            xhr.open('GET', '/success', true);  // 初始化一个请求
+            xhr.responseType = 'json';  // 响应体返回类型
+            // xhr.onload = (event) => console.log(xhr.response);  //  请求成功回掉
+            xhr.send(); // 发送请求
+        }
+        // ajax发送请求响应500
+        function sendAjax500Success() {
+            let xhr = new XMLHttpRequest;   // 初始化XMLHttpRequest实例
+            xhr.open('POST', 'error', true);    // 初始化一个请求
+            xhr.responseType = 'json';  // 响应体返回类型
+            // xhr.onload = (event) => console.log(event);  //  请求成功回掉
+            xhr.send("name=lyk");   // 发送请求
+        }
+        // ajax发送请求失败
+        function sendAjaxError() {
+            let xhr = new XMLHttpRequest;   // 初始化XMLHttpRequest实例
+            xhr.open('GET', 'https://somewhere.org/i-dont-exist', true);    // 初始化一个请求
+            xhr.responseType = 'json';  // 响应体返回类型
+            // xhr.onerror = event => console.log(event) // 请求失败回掉
+            xhr.send();   // 发送请求
+        }
+        // ajax发送请求后再终止
+        function sendAjaxAbort() {
+            let xhr = new XMLHttpRequest;   // 初始化XMLHttpRequest实例
+            xhr.open('GET', '/success', true);  // 初始化一个请求
+            xhr.send(); // 发送请求
+            xhr.abort();    // 中断请求
+        }
+
+    </script>
+
+
+</body>
+
+</html>
+```
+
+##### 3. 入口 js 文件
+
+`src\monitor\index.js`
+``` js 
+import { injectJsError } from './lib/jsError';
+import { injectXHRError } from "./lib/xhrError";
+
+injectJsError();
+injectXHRError();
+```
+##### 4. 监听接口错误的方法，并日志上报阿里日志服务埋点方法
+
+主要实现方式：就是`拦截接口请求的原生方法`，类似vue2.x的数组方法的拦截
+
+`src\lib\xhrError.js`
+``` js 
+import { tracker } from '../utils';
+
+/**
+ * 拦截接口XHR请求          （fetch没有拦截）  *****  TODO:   后续可以实现一个拦截fetch请求的
+ * 实现： 接口异常采集脚本  
+ * https://developer.mozilla.org/zh-CN/docs/Web/API/XMLHttpRequest
+ */
+export function injectXHRError() {
+    let XMLHttpRequest = window.XMLHttpRequest;
+    // 1. 拿到旧的初始化请求的open方法
+    let oldOpen = XMLHttpRequest.prototype.open;
+
+
+    // 2. 拦截open方法，定义哪些接口需要拦截
+    XMLHttpRequest.prototype.open = function (method, url, async) {
+        // 2.1 定义一个标识，对哪些接口实现接口拦截
+        // 过滤掉logstores的云服务器接口和sockjs的webpack请求       ***** TODO: 这里面可以由用户配置，拦截哪些接口 
+        if (!url.match(/logstores/) && !url.match(/sockjs/)) {
+            this.logData = { method, url, async }
+        }
+        // 2.2 初始化请求
+        return oldOpen.apply(this, arguments);
+    }
+    // 3. 拿到旧的发送请求的send方法
+    let oldSend = XMLHttpRequest.prototype.send;
+
+    // 4. 拦截send方法，实现接口监控采集上报
+    XMLHttpRequest.prototype.send = function (body) {
+        // 4.1 需要接口上报集采的接口
+        if (this.logData) {
+            let start = Date.now();
+            let handler = (event) => {
+                let duration = Date.now() - start;    // 计算接口耗时
+                let status = this.status;   // 获取状态code     200/304/500 ...
+                let statusText = this.statusText;   // 获取状态tetext OK/Internal Server Error ...
+                // 4.2 接口埋点上报
+                tracker.send({
+                    kind: 'stability',//稳定性指标
+                    type: 'xhr',// 接口类型
+                    eventType: event.type,   // 接口请求的状态 load error abort
+                    pathname: this.logData.url,// 接口的url地址
+                    status: status + "-" + statusText,  // 状态code + 状态text
+                    duration, //接口耗时
+                    response: this.response ? JSON.stringify(this.response) : "",   // 响应体
+                    params: body || ''       // 请求体
+                })
+            }
+            // 监听接口请求的状态   https://developer.mozilla.org/zh-CN/docs/Web/API/XMLHttpRequest/error_event
+            // loadstart, load, loadend, progress, error,  abort
+
+            // load  只要服务器请求通了，就执行， 200，300，404，500 都会触发
+            this.addEventListener('load', handler);
+            // error 只有当服务器请求不通，才执行   
+            this.addEventListener('error', handler);
+            // abort 只有当接口请求中断才会执行
+            this.addEventListener('abort', handler);
+        }
+        // 4.3 真正发送请求的地方
+        oldSend.apply(this, arguments);
+    };
+}
+```
+
+### 4. 页面白屏采集脚本

@@ -18,7 +18,23 @@ module.exports = {
 		static: {
 			directory: resolvePath('dist'),
 		},
-		open: true
+		open: true,	// 自动打开浏览器
+		// // 注册before钩子	
+		// webpack5 写法	
+		setupMiddlewares: (middlewares, devServer) => {
+			if (!devServer) throw new Error('webpack-dev-server is not defined');
+			// express 写法			
+			// 注册/success路由			访问	/success
+			devServer.app.get('/success', function (req, res) {
+				res.json({ id: 1 });		// 响应成功
+			});
+			// 注册/error路由			访问	/error
+			devServer.app.post('/error', function (req, res) {
+				res.sendStatus(500);		// 响应失败
+			});
+			return middlewares
+		},
+
 	},
 	// 配置插件
 	plugins: [
@@ -27,8 +43,10 @@ module.exports = {
 			filename: 'index.html', // 打包之后的文件名称
 			// 在head头部插入打包之后的资源
 			inject: 'head',
-			// HtmlWebpackPlugin版本5，  默认defer: 加了该属性的script，脚本会在文档渲染完毕后，DOMContentLoaded事件调用前执行
-			scriptLoading: "blocking", 	// 加载的脚本默认是defer，  设置blocking同步加载js，不然捕获不到资源错误   ******	
+			// HtmlWebpackPlugin版本5，  添加了 scriptLoading 属性配置
+			// https://www.npmjs.com/package/html-webpack-plugin	scriptLoading
+			// {'blocking'|'defer'|'module'} 支持3个配置，默认defer,异步加载（脚本会在文档渲染完毕后，DOMContentLoaded事件调用前执行）
+			scriptLoading: "blocking", 	// 设置blocking同步加载js，不然捕获不到资源错误   ******	
 		}),
 	],
 };
