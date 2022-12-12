@@ -6,79 +6,40 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>前端监控系统</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        #root {
+            width: 100vw;
+            height: 100vh;
+            word-break: break-all;
+        }
+    </style>
 </head>
 
 <body>
     <div id="root">
-        <!-- 1. 监控js错误 -->
-        <p>1. 监控js错误</p>
-        <button id="btn1" onclick="handleError()">触发error错误</button>
-        <button id="btn2" onclick="handlePromiseError()">触发promiseError错误</button>
-        <br />
-
-        <!-- 2. 监控接口错误 -->
-        <p>2. 监控接口错误</p>
-        <button id="btn3" onclick="sendAjaxSuccess()">发起ajax成功请求</button>
-        <button id="btn3-1" onclick="sendAjax500Success()">ajax发送请求响应500</button>
-        <button id="btn4" onclick="sendAjaxError()">发起ajax失败请求</button>
-        <button id="btn5" onclick="sendAjaxAbort()">发起ajax请求中断</button>
 
     </div>
 
-    <!-- 1. 监控js错误 -->
-    <script type="text/javascript">
-        // 1.1 js错误
-        function handleError() {
-            console.log(window.someObj.name);
-        }
-        // 1.2 promise 错误
-        function handlePromiseError() {
-            let p1 = new Promise(function (resolve, reject) {
-                console.log(window.someVar.some); // 报错信息reason是object
-                // reject("错误"); // 报错信息reason是string    
-                // reject(window.someVar.some) // 报错信息reason是object
-            })
-        }
-    </script>
-    <!-- 1.3 资源加载错误 -->
-    <!-- <script src="error.js" /> -->
-
-    <!-- 2. 监控接口错误 -->
     <script>
-        // ajax发送请求成功
-        function sendAjaxSuccess() {
-            let xhr = new XMLHttpRequest;    // 初始化XMLHttpRequest实例
-            xhr.open('GET', '/success', true);  // 初始化一个请求
-            xhr.responseType = 'json';  // 响应体返回类型
-            // xhr.onload = (event) => console.log(xhr.response);  //  请求成功回掉
-            xhr.send(); // 发送请求
-        }
-        // ajax发送请求响应500
-        function sendAjax500Success() {
-            let xhr = new XMLHttpRequest;   // 初始化XMLHttpRequest实例
-            xhr.open('POST', 'error', true);    // 初始化一个请求
-            xhr.responseType = 'json';  // 响应体返回类型
-            // xhr.onload = (event) => console.log(event);  //  请求成功回掉
-            xhr.send("name=lyk");   // 发送请求
-        }
-        // ajax发送请求失败
-        function sendAjaxError() {
-            let xhr = new XMLHttpRequest;   // 初始化XMLHttpRequest实例
-            xhr.open('GET', 'https://somewhere.org/i-dont-exist', true);    // 初始化一个请求
-            xhr.responseType = 'json';  // 响应体返回类型
-            // xhr.onerror = event => console.log(event) // 请求失败回掉
-            xhr.send();   // 发送请求
-        }
-        // ajax发送请求后再终止
-        function sendAjaxAbort() {
-            let xhr = new XMLHttpRequest;   // 初始化XMLHttpRequest实例
-            xhr.open('GET', '/success', true);  // 初始化一个请求
-            xhr.send(); // 发送请求
-            xhr.abort();    // 中断请求
-        }
+        // 模拟设置当前页面不是白屏
+        const root = document.getElementById('root');
 
+        // 1. 将整个屏幕铺满一部分
+        const div = document.createElement('div');
+        div.innerHTML = '@'.repeat(300);
+        root.appendChild(div);
+
+        // 2. 将整个屏幕铺满
+        // const div = document.createElement('div');
+        // div.innerHTML = '@'.repeat(3000);
+        // root.appendChild(div);
     </script>
-
 
 </body>
 

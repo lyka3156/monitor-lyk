@@ -245,7 +245,7 @@ module.exports = {
 		static: {
 			directory: resolvePath('dist'),
 		},
-		open: true
+		open: true,
 	},
 	// 配置插件
 	plugins: [
@@ -255,7 +255,7 @@ module.exports = {
 			// 在head头部插入打包之后的资源
 			inject: 'head',
 			// HtmlWebpackPlugin版本5，  默认defer: 加了该属性的script，脚本会在文档渲染完毕后，DOMContentLoaded事件调用前执行
-			scriptLoading: "blocking", 	// 加载的脚本默认是defer，  设置blocking同步加载js，不然捕获不到资源错误   ******	
+			scriptLoading: 'blocking', // 加载的脚本默认是defer，  设置blocking同步加载js，不然捕获不到资源错误   ******
 		}),
 	],
 };
@@ -268,40 +268,39 @@ module.exports = {
 ```html
 <!DOCTYPE html>
 <html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>前端监控系统</title>
+	</head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>前端监控系统</title>
-</head>
+	<body>
+		<div id="root">
+			<button id="btn1" onclick="handleError()">触发error错误</button>
+			<button id="btn2" onclick="handlePromiseError()">
+				触发promiseError错误
+			</button>
+		</div>
 
-<body>
-    <div id="root">
-        <button id="btn1" onclick="handleError()">触发error错误</button>
-        <button id="btn2" onclick="handlePromiseError()">触发promiseError错误</button>
-    </div>
+		<script type="text/javascript">
+			// 1. js错误
+			function handleError() {
+				console.log(window.someObj.name);
+			}
+			// 2. promise 错误
+			function handlePromiseError() {
+				let p1 = new Promise(function (resolve, reject) {
+					console.log(window.someVar.some); // 报错信息reason是object
+					// reject("错误"); // 报错信息reason是string
+					// reject(window.someVar.some) // 报错信息reason是object
+				});
+			}
+		</script>
 
-
-    <script type="text/javascript">
-        // 1. js错误
-        function handleError() {
-            console.log(window.someObj.name);
-        }
-        // 2. promise 错误
-        function handlePromiseError() {
-            let p1 = new Promise(function (resolve, reject) {
-                console.log(window.someVar.some); // 报错信息reason是object
-                // reject("错误"); // 报错信息reason是string    
-                // reject(window.someVar.some) // 报错信息reason是object
-            })
-        }
-    </script>
-
-    <!-- 3. 资源加载错误 -->
-    <script src="error.js"></script>
-</body>
-
+		<!-- 3. 资源加载错误 -->
+		<script src="error.js"></script>
+	</body>
 </html>
 ```
 
@@ -330,11 +329,13 @@ injectJsError();
 import { getLines, getLastEvent, getSelector, tracker } from '../utils';
 export function injectJsError() {
 	// 1. 一般JS运行时错误使用window.onerror捕获处理
-	window.addEventListener('error',
+	window.addEventListener(
+		'error',
 		function (event) {
 			// console.log('错误对象:', event);
 			// 判断是否是资源加载错误
-			const isResoureError = event.target && (event.target.src || event.target.href)
+			const isResoureError =
+				event.target && (event.target.src || event.target.href);
 
 			// （1） js 报错
 			if (!isResoureError) {
@@ -342,7 +343,13 @@ export function injectJsError() {
 				const lastEvent = getLastEvent();
 
 				// 2. 解构错误信息对象
-				const { lineno = 0, colno = 0, message, filename, error } = event;
+				const {
+					lineno = 0,
+					colno = 0,
+					message,
+					filename,
+					error,
+				} = event;
 
 				// 3. 封装需要上报的日志对象信息
 				const log = {
@@ -371,11 +378,10 @@ export function injectJsError() {
 					kind: 'stability', // 大类  stability: 稳定性
 					type: 'error', // 小类
 					errorType: 'resourceError', // JS错误类型
-					filename: target.src || target.href,//加载失败的资源
+					filename: target.src || target.href, //加载失败的资源
 					tagName: target.tagName, // 标签名
 					selector: getSelector(path || target), // 选择器    HTML BODY #container .content INPUT
 				};
-
 
 				// 4. 日志上报
 				tracker.send(log);
@@ -537,7 +543,6 @@ class Tracker {
 }
 
 export default new Tracker();
-
 ```
 
 2. `src\utils\getLastEvent.js`
@@ -635,12 +640,13 @@ export default function getSelector(pathsOrTarget) {
 }
 ```
 
-
 ### 3. 接口异常采集脚本
 
 #### 1. 数据设计
-`成功接口返回200`	
-``` js 
+
+`成功接口返回200`
+
+```js
 {
   "title": "前端监控系统", //标题
   "url": "http://localhost:8080/", //url
@@ -658,7 +664,8 @@ export default function getSelector(pathsOrTarget) {
 ```
 
 `成功接口返回500`
-``` js 
+
+```js
 {
   "title": "前端监控系统", //标题
   "url": "http://localhost:8080/", //url
@@ -676,7 +683,8 @@ export default function getSelector(pathsOrTarget) {
 ```
 
 `失败接口`
-``` js 
+
+```js
 {
   "title": "前端监控系统",
   "url": "http://localhost:8080/",
@@ -694,7 +702,8 @@ export default function getSelector(pathsOrTarget) {
 ```
 
 `请求中断`
-``` js 
+
+```js
 {
   "title": "前端监控系统",
   "url": "http://localhost:8080/",
@@ -713,11 +722,11 @@ export default function getSelector(pathsOrTarget) {
 
 #### 2. 代码实现
 
-##### 1. 配置 webpack.config.js 
+##### 1. 配置 webpack.config.js
 
-- 配置devServer的setupMiddlewares中间件，模拟后端get/post接口，来做接口请求拦截案例
+-   配置 devServer 的 setupMiddlewares 中间件，模拟后端 get/post 接口，来做接口请求拦截案例
 
-``` js
+```js
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const resolvePath = (p) => path.resolve(__dirname, p);
@@ -738,23 +747,23 @@ module.exports = {
 		static: {
 			directory: resolvePath('dist'),
 		},
-		open: true,	// 自动打开浏览器
-		// // 注册before钩子	
-		// webpack5 写法	
+		open: true, // 自动打开浏览器
+		// // 注册before钩子
+		// webpack5 写法
 		setupMiddlewares: (middlewares, devServer) => {
-			if (!devServer) throw new Error('webpack-dev-server is not defined');
-			// express 写法			
+			if (!devServer)
+				throw new Error('webpack-dev-server is not defined');
+			// express 写法
 			// 注册/success路由			访问	/success
 			devServer.app.get('/success', function (req, res) {
-				res.json({ id: 1 });		// 响应成功
+				res.json({ id: 1 }); // 响应成功
 			});
 			// 注册/error路由			访问	/error
 			devServer.app.post('/error', function (req, res) {
-				res.sendStatus(500);		// 响应失败
+				res.sendStatus(500); // 响应失败
 			});
-			return middlewares
+			return middlewares;
 		},
-
 	},
 	// 配置插件
 	plugins: [
@@ -766,181 +775,375 @@ module.exports = {
 			// HtmlWebpackPlugin版本5，  添加了 scriptLoading 属性配置
 			// https://www.npmjs.com/package/html-webpack-plugin	scriptLoading
 			// {'blocking'|'defer'|'module'} 支持3个配置，默认defer,异步加载（脚本会在文档渲染完毕后，DOMContentLoaded事件调用前执行）
-			scriptLoading: "blocking", 	// 设置blocking同步加载js，不然捕获不到资源错误   ******	
+			scriptLoading: 'blocking', // 设置blocking同步加载js，不然捕获不到资源错误   ******
 		}),
 	],
 };
-
 ```
 
 ##### 2. 入口 index.html
 
 `src\index.html`
-``` html 
+
+```html
 <!DOCTYPE html>
 <html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>前端监控系统</title>
+	</head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>前端监控系统</title>
-</head>
+	<body>
+		<div id="root">
+			<!-- 1. 监控js错误 -->
+			<p>1. 监控js错误</p>
+			<button id="btn1" onclick="handleError()">触发error错误</button>
+			<button id="btn2" onclick="handlePromiseError()">
+				触发promiseError错误
+			</button>
+			<br />
 
-<body>
-    <div id="root">
-        <!-- 1. 监控js错误 -->
-        <p>1. 监控js错误</p>
-        <button id="btn1" onclick="handleError()">触发error错误</button>
-        <button id="btn2" onclick="handlePromiseError()">触发promiseError错误</button>
-        <br />
+			<!-- 2. 监控接口错误 -->
+			<p>2. 监控接口错误</p>
+			<button id="btn3" onclick="sendAjaxSuccess()">
+				发起ajax成功请求
+			</button>
+			<button id="btn3-1" onclick="sendAjax500Success()">
+				ajax发送请求响应500
+			</button>
+			<button id="btn4" onclick="sendAjaxError()">
+				发起ajax失败请求
+			</button>
+			<button id="btn5" onclick="sendAjaxAbort()">
+				发起ajax请求中断
+			</button>
+		</div>
 
-        <!-- 2. 监控接口错误 -->
-        <p>2. 监控接口错误</p>
-        <button id="btn3" onclick="sendAjaxSuccess()">发起ajax成功请求</button>
-        <button id="btn3-1" onclick="sendAjax500Success()">ajax发送请求响应500</button>
-        <button id="btn4" onclick="sendAjaxError()">发起ajax失败请求</button>
-        <button id="btn5" onclick="sendAjaxAbort()">发起ajax请求中断</button>
+		<!-- 1. 监控js错误 -->
+		<script type="text/javascript">
+			// 1.1 js错误
+			function handleError() {
+				console.log(window.someObj.name);
+			}
+			// 1.2 promise 错误
+			function handlePromiseError() {
+				let p1 = new Promise(function (resolve, reject) {
+					console.log(window.someVar.some); // 报错信息reason是object
+					// reject("错误"); // 报错信息reason是string
+					// reject(window.someVar.some) // 报错信息reason是object
+				});
+			}
+		</script>
+		<!-- 1.3 资源加载错误 -->
+		<!-- <script src="error.js" /> -->
 
-    </div>
-
-    <!-- 1. 监控js错误 -->
-    <script type="text/javascript">
-        // 1.1 js错误
-        function handleError() {
-            console.log(window.someObj.name);
-        }
-        // 1.2 promise 错误
-        function handlePromiseError() {
-            let p1 = new Promise(function (resolve, reject) {
-                console.log(window.someVar.some); // 报错信息reason是object
-                // reject("错误"); // 报错信息reason是string    
-                // reject(window.someVar.some) // 报错信息reason是object
-            })
-        }
-    </script>
-    <!-- 1.3 资源加载错误 -->
-    <!-- <script src="error.js" /> -->
-
-    <!-- 2. 监控接口错误 -->
-    <script>
-        // ajax发送请求成功
-        function sendAjaxSuccess() {
-            let xhr = new XMLHttpRequest;    // 初始化XMLHttpRequest实例
-            xhr.open('GET', '/success', true);  // 初始化一个请求
-            xhr.responseType = 'json';  // 响应体返回类型
-            // xhr.onload = (event) => console.log(xhr.response);  //  请求成功回掉
-            xhr.send(); // 发送请求
-        }
-        // ajax发送请求响应500
-        function sendAjax500Success() {
-            let xhr = new XMLHttpRequest;   // 初始化XMLHttpRequest实例
-            xhr.open('POST', 'error', true);    // 初始化一个请求
-            xhr.responseType = 'json';  // 响应体返回类型
-            // xhr.onload = (event) => console.log(event);  //  请求成功回掉
-            xhr.send("name=lyk");   // 发送请求
-        }
-        // ajax发送请求失败
-        function sendAjaxError() {
-            let xhr = new XMLHttpRequest;   // 初始化XMLHttpRequest实例
-            xhr.open('GET', 'https://somewhere.org/i-dont-exist', true);    // 初始化一个请求
-            xhr.responseType = 'json';  // 响应体返回类型
-            // xhr.onerror = event => console.log(event) // 请求失败回掉
-            xhr.send();   // 发送请求
-        }
-        // ajax发送请求后再终止
-        function sendAjaxAbort() {
-            let xhr = new XMLHttpRequest;   // 初始化XMLHttpRequest实例
-            xhr.open('GET', '/success', true);  // 初始化一个请求
-            xhr.send(); // 发送请求
-            xhr.abort();    // 中断请求
-        }
-
-    </script>
-
-
-</body>
-
+		<!-- 2. 监控接口错误 -->
+		<script>
+			// ajax发送请求成功
+			function sendAjaxSuccess() {
+				let xhr = new XMLHttpRequest(); // 初始化XMLHttpRequest实例
+				xhr.open('GET', '/success', true); // 初始化一个请求
+				xhr.responseType = 'json'; // 响应体返回类型
+				// xhr.onload = (event) => console.log(xhr.response);  //  请求成功回掉
+				xhr.send(); // 发送请求
+			}
+			// ajax发送请求响应500
+			function sendAjax500Success() {
+				let xhr = new XMLHttpRequest(); // 初始化XMLHttpRequest实例
+				xhr.open('POST', 'error', true); // 初始化一个请求
+				xhr.responseType = 'json'; // 响应体返回类型
+				// xhr.onload = (event) => console.log(event);  //  请求成功回掉
+				xhr.send('name=lyk'); // 发送请求
+			}
+			// ajax发送请求失败
+			function sendAjaxError() {
+				let xhr = new XMLHttpRequest(); // 初始化XMLHttpRequest实例
+				xhr.open('GET', 'https://somewhere.org/i-dont-exist', true); // 初始化一个请求
+				xhr.responseType = 'json'; // 响应体返回类型
+				// xhr.onerror = event => console.log(event) // 请求失败回掉
+				xhr.send(); // 发送请求
+			}
+			// ajax发送请求后再终止
+			function sendAjaxAbort() {
+				let xhr = new XMLHttpRequest(); // 初始化XMLHttpRequest实例
+				xhr.open('GET', '/success', true); // 初始化一个请求
+				xhr.send(); // 发送请求
+				xhr.abort(); // 中断请求
+			}
+		</script>
+	</body>
 </html>
 ```
 
 ##### 3. 入口 js 文件
 
 `src\monitor\index.js`
-``` js 
+
+```js
 import { injectJsError } from './lib/jsError';
-import { injectXHRError } from "./lib/xhrError";
+import { injectXHRError } from './lib/xhrError';
 
 injectJsError();
 injectXHRError();
 ```
+
 ##### 4. 监听接口错误的方法，并日志上报阿里日志服务埋点方法
 
-主要实现方式：就是`拦截接口请求的原生方法`，类似vue2.x的数组方法的拦截
+主要实现方式：就是`拦截接口请求的原生方法`，类似 vue2.x 的数组方法的拦截
 
 `src\lib\xhrError.js`
-``` js 
+
+```js
 import { tracker } from '../utils';
 
 /**
  * 拦截接口XHR请求          （fetch没有拦截）  *****  TODO:   后续可以实现一个拦截fetch请求的
- * 实现： 接口异常采集脚本  
+ * 实现： 接口异常采集脚本
  * https://developer.mozilla.org/zh-CN/docs/Web/API/XMLHttpRequest
  */
 export function injectXHRError() {
-    let XMLHttpRequest = window.XMLHttpRequest;
-    // 1. 拿到旧的初始化请求的open方法
-    let oldOpen = XMLHttpRequest.prototype.open;
+	let XMLHttpRequest = window.XMLHttpRequest;
+	// 1. 拿到旧的初始化请求的open方法
+	let oldOpen = XMLHttpRequest.prototype.open;
 
+	// 2. 拦截open方法，定义哪些接口需要拦截
+	XMLHttpRequest.prototype.open = function (method, url, async) {
+		// 2.1 定义一个标识，对哪些接口实现接口拦截
+		// 过滤掉logstores的云服务器接口和sockjs的webpack请求       ***** TODO: 这里面可以由用户配置，拦截哪些接口
+		if (!url.match(/logstores/) && !url.match(/sockjs/)) {
+			this.logData = { method, url, async };
+		}
+		// 2.2 初始化请求
+		return oldOpen.apply(this, arguments);
+	};
+	// 3. 拿到旧的发送请求的send方法
+	let oldSend = XMLHttpRequest.prototype.send;
 
-    // 2. 拦截open方法，定义哪些接口需要拦截
-    XMLHttpRequest.prototype.open = function (method, url, async) {
-        // 2.1 定义一个标识，对哪些接口实现接口拦截
-        // 过滤掉logstores的云服务器接口和sockjs的webpack请求       ***** TODO: 这里面可以由用户配置，拦截哪些接口 
-        if (!url.match(/logstores/) && !url.match(/sockjs/)) {
-            this.logData = { method, url, async }
-        }
-        // 2.2 初始化请求
-        return oldOpen.apply(this, arguments);
-    }
-    // 3. 拿到旧的发送请求的send方法
-    let oldSend = XMLHttpRequest.prototype.send;
+	// 4. 拦截send方法，实现接口监控采集上报
+	XMLHttpRequest.prototype.send = function (body) {
+		// 4.1 需要接口上报集采的接口
+		if (this.logData) {
+			let start = Date.now();
+			let handler = (event) => {
+				let duration = Date.now() - start; // 计算接口耗时
+				let status = this.status; // 获取状态code     200/304/500 ...
+				let statusText = this.statusText; // 获取状态tetext OK/Internal Server Error ...
+				// 4.2 接口埋点上报
+				tracker.send({
+					kind: 'stability', //稳定性指标
+					type: 'xhr', // 接口类型
+					eventType: event.type, // 接口请求的状态 load error abort
+					pathname: this.logData.url, // 接口的url地址
+					status: status + '-' + statusText, // 状态code + 状态text
+					duration, //接口耗时
+					response: this.response
+						? JSON.stringify(this.response)
+						: '', // 响应体
+					params: body || '', // 请求体
+				});
+			};
+			// 监听接口请求的状态   https://developer.mozilla.org/zh-CN/docs/Web/API/XMLHttpRequest/error_event
+			// loadstart, load, loadend, progress, error,  abort
 
-    // 4. 拦截send方法，实现接口监控采集上报
-    XMLHttpRequest.prototype.send = function (body) {
-        // 4.1 需要接口上报集采的接口
-        if (this.logData) {
-            let start = Date.now();
-            let handler = (event) => {
-                let duration = Date.now() - start;    // 计算接口耗时
-                let status = this.status;   // 获取状态code     200/304/500 ...
-                let statusText = this.statusText;   // 获取状态tetext OK/Internal Server Error ...
-                // 4.2 接口埋点上报
-                tracker.send({
-                    kind: 'stability',//稳定性指标
-                    type: 'xhr',// 接口类型
-                    eventType: event.type,   // 接口请求的状态 load error abort
-                    pathname: this.logData.url,// 接口的url地址
-                    status: status + "-" + statusText,  // 状态code + 状态text
-                    duration, //接口耗时
-                    response: this.response ? JSON.stringify(this.response) : "",   // 响应体
-                    params: body || ''       // 请求体
-                })
-            }
-            // 监听接口请求的状态   https://developer.mozilla.org/zh-CN/docs/Web/API/XMLHttpRequest/error_event
-            // loadstart, load, loadend, progress, error,  abort
-
-            // load  只要服务器请求通了，就执行， 200，300，404，500 都会触发
-            this.addEventListener('load', handler);
-            // error 只有当服务器请求不通，才执行   
-            this.addEventListener('error', handler);
-            // abort 只有当接口请求中断才会执行
-            this.addEventListener('abort', handler);
-        }
-        // 4.3 真正发送请求的地方
-        oldSend.apply(this, arguments);
-    };
+			// load  只要服务器请求通了，就执行， 200，300，404，500 都会触发
+			this.addEventListener('load', handler);
+			// error 只有当服务器请求不通，才执行
+			this.addEventListener('error', handler);
+			// abort 只有当接口请求中断才会执行
+			this.addEventListener('abort', handler);
+		}
+		// 4.3 真正发送请求的地方
+		oldSend.apply(this, arguments);
+	};
 }
 ```
 
 ### 4. 页面白屏采集脚本
+
+-   白屏就是页面上什么都没有
+
+#### 1. 数据设计
+
+```js
+{
+  "title": "前端监控系统",
+  "url": "http://localhost:8080/",
+  "timestamp": "1670837989410",
+  "userAgent": "chrome",
+  "kind": "stability",      //大类
+  "type": "blank",          //小类
+  "emptyPoints": "14",       //空白点
+  "screen": "1920x1080",    //分辨率
+  "viewPoint": "910x937",  //视口
+  "selector": "HTML BODY #container" //选择器
+}
+```
+
+#### 2. 代码实现
+
+[screen](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/screen) 返回当前 window 的 screen 对象,返回当前渲染窗口中和屏幕有关的属性
+[innerWidth](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/innerWidth) 只读的 Window 属性 innerWidth 返回以像素为单位的窗口的内部宽度
+[innerHeight](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/innerHeight) 窗口的内部高度(布局视口)的高度
+[layout_viewport](https://developer.mozilla.org/en-US/docs/Glossary/layout_viewport)
+[elementsFromPoint](https://developer.mozilla.org/zh-CN/docs/Web/API/Document/elementsFromPoint) 方法可以获取到当前视口内指定坐标处，由里到外排列的所有元素
+
+实现思路
+
+1. 记录以哪些元素当作参考依据来代表现在是白屏的 TODO: 这个也可以用户去定义标准
+    - 例如：刚开始页面就有 html,body,#root
+2. 页面加载完成时，从页面中取 n 个点，判断这些点是否还在上面依据为空白的元素上面 TODO: n 个点也可以用户去定义标准
+    - 选取点的方式可以自己设置，
+        - 例如：x , y 轴 各取 10 个点 一个十字
+        - 例如：x ，y 轴 各取 10 个点，然后从左右角落下去再分别取 10 个点 +,x
+3. 初始化一个变量，来计算空白点的数量
+4. 空白点的数量大于一个临界值 (m) 就代表当前页面是白屏页面 TODO: 这个临界值也可以用户传入进来
+    - 这个临界值可以自己设置
+5. 白屏日志上报
+
+##### 1. 入口 index.html
+
+`src\index.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>前端监控系统</title>
+
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+			}
+
+			#root {
+				width: 100vw;
+				height: 100vh;
+				word-break: break-all;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="root"></div>
+
+		<script>
+			// 模拟设置当前页面不是白屏
+			const root = document.getElementById('root');
+
+			// 1. 将整个屏幕铺满一部分
+			const div = document.createElement('div');
+			div.innerHTML = '@'.repeat(300);
+			root.appendChild(div);
+
+			// 2. 将整个屏幕铺满
+			// const div = document.createElement('div');
+			// div.innerHTML = '@'.repeat(3000);
+			// root.appendChild(div);
+		</script>
+	</body>
+</html>
+```
+
+##### 2. 入口 js 文件
+
+`src\index.js`
+
+```js
+// 1. js promise 资源加载错误监控
+import { injectJsError } from './lib/jsError';
+// 2. 接口监控
+import { injectXHRError } from './lib/xhrError';
+// 3. 白屏监控
+import { blankScreen } from './lib/blankScreen';
+
+injectJsError();
+injectXHRError();
+blankScreen();
+```
+
+##### 3. 监听页面白屏的方法，并且埋点上报阿里日志服务
+
+`src\lib\blankScreen.js`
+
+```js
+/**
+ * 监控白屏上报日志
+ * 实现思路:
+ * 1. 记录以哪些元素当作参考依据来代表现在是白屏的           TODO: 这个也可以用户去定义标准
+ *      - 例如：刚开始页面就有html,body,#root
+ * 2. 页面加载完成时，从页面中取 n 个点，判断这些点是否还在上面依据为空白的元素上面      TODO: n个点也可以用户去定义标准
+ *      - 选取点的方式可以自己设置，
+ *          - 例如：x , y轴 各取10个点      一个十字
+ *          - 例如：x ，y轴 各取10个点，然后从左右角落下去再分别取10个点    +,x
+ * 3. 初始化一个变量，来计算空白点的数量
+ * 4. 空白点的数量大于一个临界值 (m) 就代表当前页面是白屏页面           TODO: 这个临界值也可以用户传入进来
+ *      - 这个临界值可以自己设置
+ * 5. 白屏日志上报
+ */
+import { onload, tracker, getSelector } from '../utils';
+
+export function blankScreen() {
+	// 1. 初始化依据为空白元素
+	const blankWrapperSelectors = ['html', 'body', '#root'];
+
+	// 3. 记录空白点
+	let emptyPoints = 0;
+	// 元素是否是空白元素包裹
+	function isBlankWrapper(element) {
+		// 获取当前点的元素: HTML BODY #root   ,  HTML BODY #root #btn3-1
+		let selector = getSelector(element);
+
+		// 通过空格分割，获取最后一个元素 HTML BODY #root  => #root
+		const eleList = selector.split(' ');
+		const insideEle = eleList.pop() || '';
+
+		// 当前选中点的元素就是空白元素，空白点++
+		if (blankWrapperSelectors.indexOf(insideEle.toLocaleLowerCase()) >= 0)
+			emptyPoints++;
+	}
+
+	// 2. 页面加载完成时，从页面中取 n 个点，判断这些点是否还在上面依据为空白的元素上面
+	onload(function () {
+		// 初始化 x ， y 轴坐标点的元素
+		let xElements, yElements;
+		for (let i = 1; i <= 9; i++) {
+			// x 点元素
+			xElements = document.elementsFromPoint(
+				(window.innerWidth * i) / 10,
+				window.innerHeight / 2
+			);
+			// y 点元素
+			yElements = document.elementsFromPoint(
+				window.innerWidth / 2,
+				(window.innerHeight * i) / 10
+			);
+			// 记录空白元素
+			isBlankWrapper(xElements[0]);
+			isBlankWrapper(yElements[0]);
+		}
+		// 4. 空白点大于 0 代表在页面中选取的坐标点元素有空白的地方，就代表现在还是白屏的
+		console.log('空白点：', emptyPoints);
+		if (emptyPoints >= 0) {
+			let centerElements = document.elementsFromPoint(
+				window.innerWidth / 2,
+				window.innerHeight / 2
+			);
+			// 5. 白屏日志上报
+			tracker.send({
+				kind: 'stability', // 大类
+				type: 'blank', // 小类
+				emptyPoints, // 空白点
+				screen: window.screen.width + 'x' + window.screen.height, // 分辨率
+				viewPoint: window.innerWidth + 'x' + window.innerHeight, // 视口
+				selector: getSelector(centerElements[0]), // 选择器
+			});
+		}
+	});
+}
+```

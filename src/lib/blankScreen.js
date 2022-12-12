@@ -1,63 +1,3 @@
-### 1. trakcer.js 需要优化点
-
-#### 1. getExtraData 额外数据
-
-现在写死的，后续可以通过用户去动态配置
-
-```js
-// 额外数据
-function getExtraData() {
-	return {
-		title: document.title, // 页面标题
-		url: location.href, // 访问url
-		timestamp: Date.now(), //访问时间戳
-		userAgent: userAgent.parse(navigator.userAgent).name, // 用户浏览器类型
-
-		// :TODO 这里可以加入一些token或者登录的用户名好去排查问题
-		token: 'token111',
-		userName: 'lyk111',
-	};
-}
-```
-
-### 2. xhrError.js 需要优化点
-
-#### 1. 接口拦截，拦截制定的接口，由用户配置
-
-```js
-// 2. 拦截open方法，实现接口监控
-XMLHttpRequest.prototype.open = function (method, url, async) {
-	// 2.1 定义一个标识，对哪些接口实现接口拦截
-	// 过滤掉logstores的云服务器接口和sockjs的webpack请求       ***** TODO: 这里面可以由用户配置，拦截哪些接口
-	if (!url.match(/logstores/) && !url.match(/sockjs/)) {
-		this.logData = { method, url, async };
-	}
-	return oldOpen.apply(this, arguments);
-};
-```
-
-#### 2. 目前只拦截了 XHR 接口，没有拦截 fetch 接口
-
-```js
-/**
- * 拦截接口XHR请求          （fetch没有拦截）  *****  TODO:   后续可以实现一个拦截fetch请求的
- * 实现： 接口异常采集脚本
- */
-export function injectXHRError() {
-    .....
-}
-```
-
-### 3. blankScreen.js 需要优化点
-
-1. 记录以哪些元素当作参考依据来代表现在是白屏的
-    - TODO: 参照空白元素
-2. 页面加载完成时，从页面中取 n 个点，判断这些点是否还在上面依据为空白的元素上面
-    - TODO: (n：标准值)
-3. 空白点的数量大于一个临界值 (m) 就代表当前页面是白屏页面
-    - TODO: (临界点：标准)
-
-```js
 /**
  * 监控白屏上报日志
  * 实现思路:
@@ -132,4 +72,3 @@ export function blankScreen() {
 		}
 	});
 }
-```
